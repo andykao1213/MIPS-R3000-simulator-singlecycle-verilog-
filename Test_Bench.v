@@ -21,7 +21,7 @@ reg         CLK;
 reg         RST;
 integer     count;
 
-integer     f , i, j;
+integer     f , i, j, start;
 
 //file I/O
 integer iImage, dImage, snapshot;
@@ -61,15 +61,17 @@ initial  begin
 	numOfInstrction = ibuffer[1];
 
 	//push ibuffer into memory
-	for(i=0; i<numOfInstrction; i=i+4)begin 
+	start = cpu.PC.pc_out_o;
+	for(i=0; i<numOfInstrction; i=i+1)begin 
 		j = ibuffer[i+2];
-		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o] = j >> 24;
+		cpu.IM.Instr_Mem[start] = j >> 24;
 		j = ibuffer[i+2];
-		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+1] = j << 8 >> 24;
+		cpu.IM.Instr_Mem[start+1] = j << 8 >> 24;
 		j = ibuffer[i+2];
-		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+2] = j << 16 >> 24;
+		cpu.IM.Instr_Mem[start+2] = j << 16 >> 24;
 		j = ibuffer[i+2];
-		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+3] = j << 24 >> 24;
+		cpu.IM.Instr_Mem[start+3] = j << 24 >> 24;
+		start = start + 4;
 	end
 
 	tmp = $fread(dbuffer, dImage);
@@ -91,6 +93,13 @@ initial  begin
 		j = dbuffer[i+2];
 		cpu.DataMemory.Mem[i*4+0] = j << 24 >> 24;
 	end
+	for(i=numOfData*4; i<1024; i=i+1)begin
+		cpu.DataMemory.Mem[i] = 32'b0;
+	end
+
+	for(i=0; i<1024; i=i+1)begin
+		$display("%08x",cpu.DataMemory.Mem[i]);
+	end
 
 	$fclose(iImage);
 	$fclose(dImage);
@@ -103,10 +112,15 @@ always@(posedge CLK) begin
 
 	$fwrite(snapshot,"cycle %0d\n",count);
 	for(i=0; i<32; i=i+1) begin
-		$fwrite(snapshot,"$%02d: 0x%08x\n", i, cpu.RF.Reg_File[i]);
+		$fwrite(snapshot,"$%02d: 0x%08H\n", i, cpu.RF.Reg_File[i]);
 	end
-	$fwrite(snapshot,"PC: 0x%08X\n\n\n", cpu.PC.pc_out_o);
+	$fwrite(snapshot,"PC: 0x%08h\n\n\n", cpu.PC.pc_out_o);
 	count = count + 1;
+
+	/*******Debug*********/
+	$display("%08x", cpu.DataMemory.Mem[1020]);
+
+	/*********************/
 
 	if(cpu.Decoder.instr_op_i == 6'h3f)begin
     	$finish;

@@ -30,11 +30,12 @@ reg    [32-1:0]  result_o;
 wire             zero_o;
 
 //Parameter
-`define ADD 4'b0010
-`define SUB 4'b0110
-`define AND 4'b0000
-`define OR  4'b0001
-`define SLT 4'b0111
+`define ADD 4'b0010 //2
+`define SUB 4'b0110 //6
+`define AND 4'b0000 //0
+`define OR  4'b0001 //1
+`define SLT 4'b0111 //7
+`define JR  4'b0011 //3
 
 //Main function
 
@@ -59,6 +60,9 @@ always@(*) begin
 			else begin
 				result_o [31:0] = 0 ;
 			end
+		end
+		`JR: begin
+			result_o[31:0] = src1_i[31:0];
 		end
 	endcase
 end

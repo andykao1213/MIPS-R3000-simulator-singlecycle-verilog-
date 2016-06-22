@@ -42,7 +42,7 @@ output	[31:0] 		data_o;
 reg		[31:0]		data_o;
 
 // Memory
-reg		[7:0]		Mem 			[0:127];	// address: 0x00~0x80
+reg		[7:0]		Mem 			[0:1023];	// address: 0x00~0x80
 integer				i;
 
 // For Testbench to debug
@@ -85,8 +85,8 @@ always@(posedge clk_i or negedge rst_i) begin
 	/*if(rst_i==0) begin
 		for(i=0; i<128; i=i+1)
 			Mem[i] = 8'b0;
-	end*/
-	//else begin
+	end
+	else begin*/
 		if(MemWrite_i) begin
 			Mem[addr_i+3] <= data_i[31:24];
 			Mem[addr_i+2] <= data_i[23:16];
