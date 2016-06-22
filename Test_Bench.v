@@ -52,42 +52,68 @@ initial  begin
 	snapshot = $fopen("snapshot.rpt","w");
 
 	tmp = $fread(ibuffer, iImage);
+
+	//store PC
 	cpu.PC.pc_out_o = ibuffer[0];
+
+
+	//store number of intruction
 	numOfInstrction = ibuffer[1];
-	for(i=0; i<numOfInstrction; i=i+1)begin 
-		cpu.IM.Instr_Mem[i] = ibuffer[i+2];
+
+	//push ibuffer into memory
+	for(i=0; i<numOfInstrction; i=i+4)begin 
+		j = ibuffer[i+2];
+		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o] = j >> 24;
+		j = ibuffer[i+2];
+		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+1] = j << 8 >> 24;
+		j = ibuffer[i+2];
+		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+2] = j << 16 >> 24;
+		j = ibuffer[i+2];
+		cpu.IM.Instr_Mem[i+cpu.PC.pc_out_o+3] = j << 24 >> 24;
 	end
 
 	tmp = $fread(dbuffer, dImage);
+
+	//store $sp
 	cpu.RF.Reg_File[29] = dbuffer[0];
+
+	//store number of data
 	numOfData = dbuffer[1];
+
+	//push dbuffer into memory
 	for(i=0; i<numOfData; i=i+1)begin
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+3] = j>>24;
+		cpu.DataMemory.Mem[i*4+3] = j >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+2] = j<<8>>24;
+		cpu.DataMemory.Mem[i*4+2] = j << 8 >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+1] = j<<16>>24;
+		cpu.DataMemory.Mem[i*4+1] = j << 16 >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+0] = j<<24>>24;
+		cpu.DataMemory.Mem[i*4+0] = j << 24 >> 24;
 	end
+
 	$fclose(iImage);
 	$fclose(dImage);
 
     #(`CYCLE_TIME/2)      RST = 1;
-    #(`CYCLE_TIME*`END_COUNT)	$finish;
-    //if(pc_out_o == 0x3F) $finish;
+    
 end
 
 always@(posedge CLK) begin
-    count = count + 1;
-	//if( count == `END_COUNT ) begin
-		$fwrite(snapshot,"cycle %0d\n",count);
-		for(i=0; i<32; i=i+1) begin
-			$fwrite(snapshot,"$%02d: 0x%08x\n", i, cpu.RF.Reg_File[i]);
-		end
-		$fwrite(snapshot,"PC: 0x%08X\n\n\n", cpu.PC.pc_out_o);
-	//end
+
+	$fwrite(snapshot,"cycle %0d\n",count);
+	for(i=0; i<32; i=i+1) begin
+		$fwrite(snapshot,"$%02d: 0x%08x\n", i, cpu.RF.Reg_File[i]);
+	end
+	$fwrite(snapshot,"PC: 0x%08X\n\n\n", cpu.PC.pc_out_o);
+	count = count + 1;
+
+	if(cpu.Decoder.instr_op_i == 6'h3f)begin
+    	$finish;
+    end
+
 end
-  
+
+
+
 endmodule
