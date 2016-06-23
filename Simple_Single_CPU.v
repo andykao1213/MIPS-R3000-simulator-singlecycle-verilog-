@@ -33,12 +33,13 @@ wire [4:0] returnAddress;
 wire [4:0] aftermux11;
 wire [31:0]afterregread1 ;
 wire [31:0]afterregread2 ;
-wire [2:0]aluop ;
+wire [4:0]aluop ;
 wire alusrc ;
 wire branch ;
+wire aluctr;
 wire memwrite ,memread,memtoreg;
-wire jump, jr;
-wire [3:0]afteraluctr ;
+wire jump, jr, sr;
+wire [4:0]afteraluctr ;
 wire [31:0] aftersignextend ;
 wire [31:0] aftershiftleft ;
 wire [31:0] aftermux2toinalu ;
@@ -52,6 +53,9 @@ wire [32-1:0]alupc;
 wire [32-1:0]afterPC2;
 wire [32-1:0]aftershiftleft_pc;
 wire [32-1:0]afterinstructmem_shift;
+wire [32-1:0]aftermux2toinalu2;
+wire [2-1:0]memNum;
+wire unsign;
 
 //Create components
 ProgramCounter PC(
@@ -111,14 +115,17 @@ Decoder Decoder(
 		.MemWrite_o(memwrite),
 		.MemRead_o(memread),
 		.MemtoReg_o(memtoreg),
-		.Jump_o(jump)
+		.Jump_o(jump),
+		.MemNum_o(memNum),
+		.UnSigned_o(unsign)
 	    );
 
 ALU_Ctrl AC(
         .funct_i(afterinstructmem[5:0]),   
         .ALUOp_i(aluop),   
         .ALUCtrl_o(afteraluctr),
-        .JR_o(jr)
+        .JR_o(jr),
+        .SR_o(sr)
         );
 	
 Sign_Extend SE(
@@ -132,9 +139,15 @@ MUX_2to1 #(.size(32)) Mux_ALUSrc(
         .select_i(alusrc),
         .data_o(aftermux2toinalu)
         );	
+MUX_2to1 #(.size(32)) Mux_ALUSrc2(
+        .data0_i(afterregread1),
+        .data1_i(afterregread2),
+        .select_i(sr),
+        .data_o(aftermux2toinalu2)
+        );	
 		
 ALU ALU(
-        .src1_i(afterregread1),
+        .src1_i(aftermux2toinalu2),
 	    .src2_i(aftermux2toinalu),
 	    .ctrl_i(afteraluctr),
 	    .result_o(aluresult),
@@ -190,6 +203,8 @@ Data_Memory DataMemory(
 		.data_i(afterregread2),
 		.MemRead_i(memread),
 		.MemWrite_i(memwrite),
+		.MemNum_i(memNum),
+		.UnSigned_i(unsign),
 		.data_o(datamemresult)
 		);
 

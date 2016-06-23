@@ -1,23 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    17:31:32 08/18/2010 
-// Design Name: 
-// Module Name:    Data_Memory 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
-//
-// Dependencies: 
-//
-// Revision: 
-// Revision 0.01 - File Created
-// Additional Comments: 
-//
-//////////////////////////////////////////////////////////////////////////////////
+
 module Data_Memory
 (
 	clk_i,
@@ -26,6 +8,8 @@ module Data_Memory
 	data_i,
 	MemRead_i,
 	MemWrite_i,
+	MemNum_i,
+	UnSigned_i,
 	data_o
 );
 
@@ -36,6 +20,8 @@ input	[31:0]		addr_i;
 input	[31:0]		data_i;
 input				MemRead_i;
 input				MemWrite_i;
+input   [1:0]       MemNum_i;
+input               UnSigned_i;
 output	[31:0] 		data_o;
 
 // Signals
@@ -44,6 +30,11 @@ reg		[31:0]		data_o;
 // Memory
 reg		[7:0]		Mem 			[0:1023];	// address: 0x00~0x80
 integer				i;
+
+//Parameter
+`define WORD 2'b11
+`define HALF 2'b10
+`define BYTE 2'b01
 
 // For Testbench to debug
 wire	[31:0]		memory			[0:31];
@@ -80,25 +71,54 @@ assign  memory[29] = {Mem[119], Mem[118], Mem[117], Mem[116]};
 assign  memory[30] = {Mem[123], Mem[122], Mem[121], Mem[120]};
 assign  memory[31] = {Mem[127], Mem[126], Mem[125], Mem[124]};
 
-/*DO NOT CHANGE DEFAULT VALUE*/
 always@(posedge clk_i or negedge rst_i) begin
-	/*if(rst_i==0) begin
-		for(i=0; i<128; i=i+1)
-			Mem[i] = 8'b0;
+	
+	if(MemWrite_i) begin
+		case(MemNum_i)
+			`WORD: begin
+				Mem[addr_i] <= data_i[31:24];
+				Mem[addr_i+1] <= data_i[23:16];
+				Mem[addr_i+2] <= data_i[15:8];
+				Mem[addr_i+3]   <= data_i[7:0];
+			end
+			`HALF: begin
+				Mem[addr_i] <= data_i[15:8];
+				Mem[addr_i+1]   <= data_i[7:0];
+			end
+			`BYTE: begin
+				Mem[addr_i]   <= data_i[7:0];
+			end
+			default: ;
+		endcase // MemNum_i
 	end
-	else begin*/
-		if(MemWrite_i) begin
-			Mem[addr_i+3] <= data_i[31:24];
-			Mem[addr_i+2] <= data_i[23:16];
-			Mem[addr_i+1] <= data_i[15:8];
-			Mem[addr_i]   <= data_i[7:0];
-		end
-	//end
+
 end 
 
 always@(addr_i or MemRead_i) begin
-	if(MemRead_i)
-		data_o = {Mem[addr_i+3], Mem[addr_i+2], Mem[addr_i+1], Mem[addr_i]};
+	if(MemRead_i)begin
+		case (MemNum_i)
+			`WORD: data_o = {Mem[addr_i], Mem[addr_i+1], Mem[addr_i+2], Mem[addr_i+3]};
+			`HALF: data_o = {8'b0, 8'b0, Mem[addr_i], Mem[addr_i+1]};
+			`BYTE: data_o = {8'b0, 8'b0, 8'b0, Mem[addr_i]};
+			default : /* default */;
+		endcase
+	end
+
+	if(~UnSigned_i)begin
+		case (MemNum_i)
+			`WORD: ;
+			`HALF: begin
+				if(data_o[15])
+					data_o = data_o | 32'hffff0000;
+			end
+			`BYTE: begin
+				if(data_o[7])
+					data_o = data_o | 32'hffffff00;
+			end
+			default : /* default */;
+		endcase
+	end
+		
 end
 
 endmodule

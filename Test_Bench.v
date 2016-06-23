@@ -49,7 +49,7 @@ initial  begin
 	//open file
 	iImage = $fopen("iimage.bin","r");
 	dImage = $fopen("dimage.bin","r");
-	snapshot = $fopen("snapshot.rpt","w");
+	snapshot = $fopen("snapshotmy.rpt","w");
 
 	tmp = $fread(ibuffer, iImage);
 
@@ -85,21 +85,18 @@ initial  begin
 	//push dbuffer into memory
 	for(i=0; i<numOfData; i=i+1)begin
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+3] = j >> 24;
+		cpu.DataMemory.Mem[i*4+3] = j << 24 >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+2] = j << 8 >> 24;
+		cpu.DataMemory.Mem[i*4+2] = j << 16 >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+1] = j << 16 >> 24;
+		cpu.DataMemory.Mem[i*4+1] = j << 8 >> 24;
 		j = dbuffer[i+2];
-		cpu.DataMemory.Mem[i*4+0] = j << 24 >> 24;
+		cpu.DataMemory.Mem[i*4+0] = j >> 24;
 	end
 	for(i=numOfData*4; i<1024; i=i+1)begin
 		cpu.DataMemory.Mem[i] = 32'b0;
 	end
 
-	for(i=0; i<1024; i=i+1)begin
-		$display("%08x",cpu.DataMemory.Mem[i]);
-	end
 
 	$fclose(iImage);
 	$fclose(dImage);
@@ -118,7 +115,7 @@ always@(posedge CLK) begin
 	count = count + 1;
 
 	/*******Debug*********/
-	$display("%08x", cpu.DataMemory.Mem[1020]);
+	
 
 	/*********************/
 

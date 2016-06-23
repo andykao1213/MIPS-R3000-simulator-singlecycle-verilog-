@@ -1,13 +1,3 @@
-//Subject:     Architecture project 2 - ALU
-//--------------------------------------------------------------------------------
-//Version:     1
-//--------------------------------------------------------------------------------
-//Writer:      
-//----------------------------------------------
-//Date:        
-//----------------------------------------------
-//Description: 
-//--------------------------------------------------------------------------------
 
 module ALU(
     src1_i,
@@ -18,53 +8,118 @@ module ALU(
 	);
      
 //I/O ports
-input signed [32-1:0]  src1_i;
-input signed [32-1:0]	 src2_i;
-input  [4-1:0]   ctrl_i;
+input signed [32-1:0]   src1_i;
+input signed [32-1:0]	src2_i;
+input  [5-1:0]   ctrl_i;
 
 output signed [32-1:0]	 result_o;
 output           zero_o;
 
 //Internal signals
 reg    [32-1:0]  result_o;
-wire             zero_o;
+reg              zero_o;
 
 //Parameter
-`define ADD 4'b0010 //2
-`define SUB 4'b0110 //6
-`define AND 4'b0000 //0
-`define OR  4'b0001 //1
-`define SLT 4'b0111 //7
-`define JR  4'b0011 //3
+
+//Define ALU_op_i
+`define NOTH_o 5'b00000
+`define ADD_o  5'b00001
+`define ADDU_o 5'b00010
+`define SUB_o  5'b00011
+`define AND_o  5'b00100
+`define OR_o   5'b00101
+`define XOR_o  5'b00110
+`define NOR_o  5'b00111
+`define NAND_o 5'b01000
+`define SMAL_o 5'b01001
+`define LEFT_o 5'b01010
+`define RIGH_o 5'b01011
+`define RS_o   5'b01100
+`define EQUA_o 5'b01101
+`define NEQU_o 5'b01110
+`define BIG_o  5'b01111
+`define JTYP_o 5'b10000
+`define LUI_o  5'b10001
+
 
 //Main function
 
 always@(*) begin
 	case(ctrl_i)
-		`ADD: begin //add and addi
+		`ADD_o: begin
 			result_o[31:0] =src1_i[31:0] + src2_i[31:0] ;
+			zero_o = 0;
 		end
-		`SUB: begin
+		`ADDU_o: begin
+			result_o[31:0] =src1_i[31:0] + src2_i[31:0] ;
+			zero_o = 0;
+		end
+		`SUB_o: begin
 			result_o[31:0] =src1_i[31:0] - src2_i[31:0] ;
+			zero_o = 0;
 		end
-		`AND : begin
+		`AND_o: begin
 			result_o[31:0] =src1_i[31:0] & src2_i[31:0] ;
+			zero_o = 0;
 		end
-		`OR : begin
+		`OR_o: begin
 			result_o[31:0] =src1_i[31:0] | src2_i[31:0] ;
+			zero_o = 0;
 		end
-		`SLT: begin //slt and slti 
+		`XOR_o: begin
+			result_o[31:0] =src1_i[31:0] ^ src2_i[31:0] ;
+			zero_o = 0;
+		end
+		`NOR_o: begin
+			result_o[31:0] = ~ (src1_i[31:0] | src2_i[31:0]) ;
+			zero_o = 0;
+		end
+		`NAND_o: begin
+			result_o[31:0] = ~ (src1_i[31:0] & src2_i[31:0]) ;
+			zero_o = 0;
+		end
+		`SMAL_o: begin
 			if(src1_i[31:0]<src2_i[31:0]) begin
 				result_o [31:0] = 1 ;
 			end
 			else begin
 				result_o [31:0] = 0 ;
 			end
+			zero_o = 0;
 		end
-		`JR: begin
+		`LEFT_o: begin
+			result_o[31:0] = src1_i[31:0] << src2_i[31:0];
+			zero_o = 0;
+		end
+		`RIGH_o: begin
+			result_o[31:0] = src1_i[31:0] >> src2_i[31:0];
+			zero_o = 0;
+		end
+		`RS_o: begin
 			result_o[31:0] = src1_i[31:0];
+			zero_o = 0;
 		end
+		`EQUA_o: begin
+			zero_o = (src1_i == src2_i)?1:0 ;
+			result_o[31:0] = 0;
+		end
+		`NEQU_o: begin
+			zero_o = (src1_i != src2_i)?1:0 ;
+			result_o[31:0] = 0;
+		end
+		`BIG_o: begin
+			zero_o = (src1_i > 0)?1:0 ;
+			result_o[31:0] = 0;
+		end
+		`JTYP_o: begin
+			zero_o = 0;
+			result_o[31:0] = 0;
+		end
+		`LUI_o: begin
+			zero_o = 0;
+			result_o[31:0] = src2_i << 16;
+		end
+		default: ;
 	endcase
 end
-assign zero_o = (src1_i == src2_i)?1:0 ;
 endmodule
