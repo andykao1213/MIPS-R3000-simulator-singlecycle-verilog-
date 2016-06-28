@@ -1,13 +1,4 @@
-//Subject:     Architecture project 2 - Register File
-//--------------------------------------------------------------------------------
-//Version:     1
-//--------------------------------------------------------------------------------
-//Writer:      
-//----------------------------------------------
-//Date:        
-//----------------------------------------------
-//Description: 
-//--------------------------------------------------------------------------------
+
 module Reg_File(
     clk_i,
 	rst_i,
@@ -16,8 +7,10 @@ module Reg_File(
     RDaddr_i,
     RDdata_i,
     RegWrite_i,
+    Jr_i,
     RSdata_o,
-    RTdata_o
+    RTdata_o,
+    Error_Zero
     );
           
 //I/O ports
@@ -28,12 +21,15 @@ input  [5-1:0]  RSaddr_i;
 input  [5-1:0]  RTaddr_i;
 input  [5-1:0]  RDaddr_i;
 input  [32-1:0] RDdata_i;
+input           Jr_i;
 
 output [32-1:0] RSdata_o;
-output [32-1:0] RTdata_o;   
+output [32-1:0] RTdata_o; 
+output          Error_Zero;  
 
 //Internal signals/registers           
 reg  signed [32-1:0] Reg_File [0:32-1];     //32 word registers
+reg                  Error_Zero;
 wire        [32-1:0] RSdata_o;
 wire        [32-1:0] RTdata_o;
 
@@ -42,8 +38,8 @@ assign RSdata_o = Reg_File[RSaddr_i] ;
 assign RTdata_o = Reg_File[RTaddr_i] ;   
 
 //Writing data when postive edge clk_i and RegWrite_i was set.
-/*DO NOT CHANGE INITIAL VALUE*/
 always @( negedge rst_i or posedge clk_i  ) begin
+    Error_Zero = 0;
     if(rst_i == 0) begin
 	    Reg_File[0]  <= 0; Reg_File[1]  <= 0; Reg_File[2]  <= 0; Reg_File[3]  <= 0;
 	    Reg_File[4]  <= 0; Reg_File[5]  <= 0; Reg_File[6]  <= 0; Reg_File[7]  <= 0;
@@ -53,12 +49,36 @@ always @( negedge rst_i or posedge clk_i  ) begin
         Reg_File[20] <= 0; Reg_File[21] <= 0; Reg_File[22] <= 0; Reg_File[23] <= 0;
         Reg_File[24] <= 0; Reg_File[25] <= 0; Reg_File[26] <= 0; Reg_File[27] <= 0;
         Reg_File[28] <= 0; Reg_File[29] <= Reg_File[29]; Reg_File[30] <= 0; Reg_File[31] <= 0;
+        //Error_Zero <= 0;
 	end
     else begin
-        if(RegWrite_i && RDaddr_i!=0) 
-            Reg_File[RDaddr_i] <= RDdata_i;	
-		else 
-		    Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
+        if(RegWrite_i == 1)begin
+            if(RDaddr_i != 0)begin
+                Reg_File[RDaddr_i] <= RDdata_i;
+                //Error_Zero = 0;    
+            end
+            else begin
+                Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
+                if(~Jr_i)
+                    Error_Zero = 1;
+            end
+        end
+        else begin
+            Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
+            //Error_Zero = 0;
+        end
+        /*if(RegWrite_i && RDaddr_i!=0) begin
+            Reg_File[RDaddr_i] <= RDdata_i;
+            Error_Zero <= 0;	
+        end
+		else if(RegWrite_i && RDaddr_i==0) begin
+            Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
+            Error_Zero <= 1;
+		end
+        else begin
+            Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
+            Error_Zero <= 0;
+        end*/
 	end
 end
 

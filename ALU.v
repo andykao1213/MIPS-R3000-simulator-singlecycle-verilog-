@@ -4,7 +4,8 @@ module ALU(
 	src2_i,
 	ctrl_i,
 	result_o,
-	zero_o
+	zero_o,
+	err_num_o
 	);
      
 //I/O ports
@@ -14,10 +15,12 @@ input  [5-1:0]   ctrl_i;
 
 output signed [32-1:0]	 result_o;
 output           zero_o;
+output           err_num_o;
 
 //Internal signals
 reg    [32-1:0]  result_o;
 reg              zero_o;
+reg              err_num_o;
 
 //Parameter
 
@@ -45,10 +48,13 @@ reg              zero_o;
 //Main function
 
 always@(*) begin
+	err_num_o = 0;
 	case(ctrl_i)
 		`ADD_o: begin
 			result_o[31:0] =src1_i[31:0] + src2_i[31:0] ;
 			zero_o = 0;
+			if(src1_i[31] == src2_i[31] && src1_i[31] != result_o[31])
+				err_num_o = 1;
 		end
 		`ADDU_o: begin
 			result_o[31:0] =src1_i[31:0] + src2_i[31:0] ;
@@ -57,6 +63,8 @@ always@(*) begin
 		`SUB_o: begin
 			result_o[31:0] =src1_i[31:0] - src2_i[31:0] ;
 			zero_o = 0;
+			if(src1_i[31] == src2_i[31] && src1_i[31] != result_o[31])
+				err_num_o = 1;
 		end
 		`AND_o: begin
 			result_o[31:0] =src1_i[31:0] & src2_i[31:0] ;

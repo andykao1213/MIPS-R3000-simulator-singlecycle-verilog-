@@ -1,22 +1,22 @@
 `timescale 1ns / 1ps
-//Subject:     Architecture project 2 - Simple Single CPU
-//--------------------------------------------------------------------------------
-//Version:     1
-//--------------------------------------------------------------------------------
-//Writer:      
-//----------------------------------------------
-//Date:        
-//----------------------------------------------
-//Description: Structure for R-type
-//--------------------------------------------------------------------------------
+
 module Simple_Single_CPU(
     clk_i,
-	rst_i
+	rst_i,
+    err_zero_o,
+    err_num_o,
+    addressoverflow,
+    missalign
 );
 		
 //I/O port
 input         clk_i;
 input         rst_i;
+
+output          err_zero_o;
+output          err_num_o;
+output          addressoverflow;
+output          missalign;
 
 //Internal Signals
 wire [32-1:0] mux_dataMem_result_w;
@@ -25,7 +25,8 @@ wire ctrl_register_write_w;
 
 wire [31:0]befpc ;
 wire [31:0]afterpc ;
-wire [31:0]afterinstructmem ;
+wire [31:0]afterinstructmem_o;
+wire [31:0]afterinstructmem_i;
 wire [31:0] afteradder1 ;
 wire RegDst ;
 wire [4:0] aftermux1 ;
@@ -51,11 +52,19 @@ wire check ;
 wire [32-1:0]jalpc;
 wire [32-1:0]alupc;
 wire [32-1:0]afterPC2;
+wire [32-1:0]afterPC3;
 wire [32-1:0]aftershiftleft_pc;
 wire [32-1:0]afterinstructmem_shift;
 wire [32-1:0]aftermux2toinalu2;
 wire [2-1:0]memNum;
 wire unsign;
+wire aftmemwrite;
+wire aftmemread;
+wire err_addr_o;
+wire err_mis_o;
+wire [32-1:0]   halt;
+wire check2;
+
 
 //Create components
 ProgramCounter PC(
@@ -73,12 +82,12 @@ Adder Adder1(
 	
 Instr_Memory IM(
         .pc_addr_i(afterpc),  
-	    .instr_o(afterinstructmem)    
+	    .instr_o(afterinstructmem_o)    
 	    );
 
 MUX_2to1 #(.size(5)) Mux_Write_Reg(
-        .data0_i(afterinstructmem[20:16]),
-        .data1_i(afterinstructmem[15:11]),
+        .data0_i(afterinstructmem_o[20:16]),
+        .data1_i(afterinstructmem_o[15:11]),
         .select_i(RegDst),
         .data_o(aftermux1)
         );	
@@ -91,22 +100,23 @@ MUX_2to1 #(.size(5)) Mux_Write_Reg2(
         .data_o(aftermux11)
         );	
 
-//DO NOT MODIFY	.RDdata_i && .RegWrite_i
+
 Reg_File RF(
         .clk_i(clk_i),
 		.rst_i(rst_i),
-		.RSaddr_i(afterinstructmem[25:21]) ,
-		.RTaddr_i(afterinstructmem[20:16]) ,
+		.RSaddr_i(afterinstructmem_o[25:21]) ,
+		.RTaddr_i(afterinstructmem_o[20:16]) ,
 		.RDaddr_i(aftermux11) ,
 		.RDdata_i(mux_dataMem_result_w2[31:0]),
 		.RegWrite_i(ctrl_register_write_w),
+        .Jr_i(jr),
 		.RSdata_o(afterregread1) ,
-		.RTdata_o(afterregread2)
+		.RTdata_o(afterregread2),
+        .Error_Zero(err_zero_o)
         );
-	
-//DO NOT MODIFY	.RegWrite_o
+
 Decoder Decoder(
-        .instr_op_i(afterinstructmem[31:26]), 
+        .instr_op_i(afterinstructmem_o[31:26]), 
 	    .RegWrite_o(ctrl_register_write_w), 
 	    .ALU_op_o(aluop),   
 	    .ALUSrc_o(alusrc),   
@@ -121,7 +131,7 @@ Decoder Decoder(
 	    );
 
 ALU_Ctrl AC(
-        .funct_i(afterinstructmem[5:0]),   
+        .funct_i(afterinstructmem_o[5:0]),   
         .ALUOp_i(aluop),   
         .ALUCtrl_o(afteraluctr),
         .JR_o(jr),
@@ -129,7 +139,7 @@ ALU_Ctrl AC(
         );
 	
 Sign_Extend SE(
-        .data_i(afterinstructmem[15:0]),
+        .data_i(afterinstructmem_o[15:0]),
         .data_o(aftersignextend)
         );
 
@@ -151,7 +161,8 @@ ALU ALU(
 	    .src2_i(aftermux2toinalu),
 	    .ctrl_i(afteraluctr),
 	    .result_o(aluresult),
-		.zero_o(zero)
+		.zero_o(zero),
+        .err_num_o(err_num_o)
 	    );
 		
 Adder Adder2(
@@ -165,7 +176,7 @@ Shift_Left_Two_32 Shifter(
         .data_o(aftershiftleft)
         ); 	
 
-assign afterinstructmem_shift = afterinstructmem<<6>>6;
+assign afterinstructmem_shift = afterinstructmem_o<<6>>6;
 
 Shift_Left_Two_32 Shifter_PC(
         .data_i(afterinstructmem_shift),
@@ -188,27 +199,51 @@ MUX_2to1 #(.size(32)) Mux_PC_Source3(
         .data_o(befpc)
         );	
 
+//assign halt = 32'hffffffff;
+
+//assign check2 = err_mis_o | err_addr_o;
+assign missalign = err_mis_o;
+assign addressoverflow = err_addr_o;
+
+/*MUX_2to1 #(.size(32)) Mux_PC_instr(
+        .data0_i(afterinstructmem_i),
+        .data1_i(halt),
+        .select_i(check2), 
+        .data_o(afterinstructmem_o)
+        );  */
+
 assign 	check = branch & zero ;
 MUX_2to1 #(.size(32)) Mux_PC_Source(
         .data0_i(afteradder1),
         .data1_i(afteradder2),
-        .select_i(check), // ??
+        .select_i(check),
         .data_o(alupc)
         );	
+
+DMem_Error DataError(
+		.addr(aluresult),
+		.num(memNum),
+        .MemWrite_i(memwrite),
+        .MemRead_i(memread),
+		.MemWrite_o(aftmemwrite),
+		.MemRead_o(aftmemread),
+        .error_addressOverflow_o(err_addr_o),
+        .error_dataMisalign_o(err_mis_o)
+		);
 		
 Data_Memory DataMemory(
 		.clk_i(clk_i),
 		.rst_i(rst_i),
 		.addr_i(aluresult),
 		.data_i(afterregread2),
-		.MemRead_i(memread),
-		.MemWrite_i(memwrite),
+		.MemRead_i(aftmemread),
+		.MemWrite_i(aftmemwrite),
 		.MemNum_i(memNum),
 		.UnSigned_i(unsign),
 		.data_o(datamemresult)
 		);
 
-//DO NOT MODIFY	.data_o
+
  MUX_2to1 #(.size(32)) Mux_DataMem_Read(
         .data0_i(aluresult),
         .data1_i(datamemresult),

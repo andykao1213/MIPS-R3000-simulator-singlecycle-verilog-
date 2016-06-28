@@ -86,6 +86,7 @@ reg            UnSigned_o;
 `define BGTZ  6'h07
 `define JUMP  6'h02
 `define JAL   6'h03
+`define HALT  6'h3F
 
 //Main function
 always @(*) begin
@@ -362,6 +363,19 @@ always @(*) begin
 			Jump_o = 1;
 			MemNum_o= 0;
 			UnSigned_o = 0;
+		end
+		default: begin
+			RegDst_o = 0;
+                        ALUSrc_o = 0;
+                        MemtoReg_o = 0;
+                        RegWrite_o = 0;
+                        MemRead_o = 0;
+                        MemWrite_o = 0;
+                        Branch_o = 0;
+                        ALU_op_o = 0;
+                        Jump_o = 0;
+                        MemNum_o= 0;
+                        UnSigned_o = 0;
 		end
 	endcase
 end
