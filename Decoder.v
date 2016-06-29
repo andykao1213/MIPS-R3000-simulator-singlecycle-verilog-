@@ -63,6 +63,9 @@ reg            UnSigned_o;
 `define BIG_o  5'b01111
 `define JTYP_o 5'b10000
 `define LUI_o  5'b10001
+`define ORI_o  5'b10011
+`define ANDI_o 5'b10100
+`define NORI_o 5'b10101
 
 //Define instr_op_i
 `define RTYP  6'h00
@@ -268,7 +271,7 @@ always @(*) begin
 			MemRead_o = 0;
 	 		MemWrite_o = 0;
 			Branch_o = 0;
-			ALU_op_o = `AND_o;
+			ALU_op_o = `ANDI_o;
 			Jump_o = 0;
 			MemNum_o= 0;
 			UnSigned_o = 0;
@@ -281,7 +284,7 @@ always @(*) begin
 			MemRead_o = 0;
 	 		MemWrite_o = 0;
 			Branch_o = 0;
-			ALU_op_o = `OR_o;
+			ALU_op_o = `ORI_o;
 			Jump_o = 0;
 			MemNum_o= 0;
 			UnSigned_o = 0;
@@ -294,7 +297,7 @@ always @(*) begin
 			MemRead_o = 0;
 	 		MemWrite_o = 0;
 			Branch_o = 0;
-			ALU_op_o = `NOR_o;
+			ALU_op_o = `NORI_o;
 			Jump_o = 0;
 			MemNum_o= 0;
 			UnSigned_o = 0;

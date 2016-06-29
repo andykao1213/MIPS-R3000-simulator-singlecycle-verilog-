@@ -59,6 +59,8 @@ always@(posedge clk_i or negedge rst_i) begin
 		endcase // MemNum_i
 	end
 
+
+
 end 
 
 always@(addr_i or MemRead_i) begin
@@ -67,7 +69,7 @@ always@(addr_i or MemRead_i) begin
 			`WORD: data_o = {Mem[addr_i], Mem[addr_i+1], Mem[addr_i+2], Mem[addr_i+3]};
 			`HALF: data_o = {8'b0, 8'b0, Mem[addr_i], Mem[addr_i+1]};
 			`BYTE: data_o = {8'b0, 8'b0, 8'b0, Mem[addr_i]};
-			default : /* default */;
+			default :  /*default*/;
 		endcase
 	end
 
@@ -82,9 +84,28 @@ always@(addr_i or MemRead_i) begin
 				if(data_o[7])
 					data_o = data_o | 32'hffffff00;
 			end
-			default : /* default */;
+			
 		endcase
 	end
+
+	/*if(MemRead_i)begin
+		case (MemNum_i)
+			`WORD: data_o = {Mem[addr_i], Mem[addr_i+1], Mem[addr_i+2], Mem[addr_i+3]};
+			`HALF: begin
+				if(UnSigned_i)
+					data_o = {8'b0, 8'b0, Mem[addr_i], Mem[addr_i+1]};
+				else
+					data_o = $signed({8'b0, 8'b0, Mem[addr_i], Mem[addr_i+1]}) ;
+			end
+			`BYTE: begin
+				if(UnSigned_i) 
+					data_o = {8'b0, 8'b0, 8'b0, Mem[addr_i]};
+				else
+					data_o = $signed({8'b0, 8'b0, 8'b0, Mem[addr_i]});
+			end
+			default :  default;
+		endcase
+	end*/
 		
 end
 

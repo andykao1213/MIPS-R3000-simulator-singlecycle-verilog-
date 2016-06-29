@@ -5,7 +5,8 @@ module ALU(
 	ctrl_i,
 	result_o,
 	zero_o,
-	err_num_o
+	err_num_o,
+	sll_o
 	);
      
 //I/O ports
@@ -16,11 +17,13 @@ input  [5-1:0]   ctrl_i;
 output signed [32-1:0]	 result_o;
 output           zero_o;
 output           err_num_o;
+output			 sll_o;
 
 //Internal signals
 reg    [32-1:0]  result_o;
 reg              zero_o;
 reg              err_num_o;
+reg 			 sll_o;
 
 //Parameter
 
@@ -35,20 +38,25 @@ reg              err_num_o;
 `define NOR_o  5'b00111
 `define NAND_o 5'b01000
 `define SMAL_o 5'b01001
-`define LEFT_o 5'b01010
-`define RIGH_o 5'b01011
+`define SLL_o  5'b01010
+`define SRL_o  5'b01011
 `define RS_o   5'b01100
 `define EQUA_o 5'b01101
 `define NEQU_o 5'b01110
 `define BIG_o  5'b01111
 `define JTYP_o 5'b10000
 `define LUI_o  5'b10001
+`define SRA_o  5'b10010
+`define ORI_o  5'b10011
+`define ANDI_o 5'b10100
+`define NORI_o 5'b10101
 
 
 //Main function
 
 always@(*) begin
 	err_num_o = 0;
+	sll_o = 0;
 	case(ctrl_i)
 		`ADD_o: begin
 			result_o[31:0] =src1_i[31:0] + src2_i[31:0] ;
@@ -63,44 +71,52 @@ always@(*) begin
 		`SUB_o: begin
 			result_o[31:0] =src1_i[31:0] - src2_i[31:0] ;
 			zero_o = 0;
-			if(src1_i[31] == src2_i[31] && src1_i[31] != result_o[31])
+			if(src1_i[31] == ~src2_i[31] && src1_i[31] != result_o[31])
 				err_num_o = 1;
 		end
-		`AND_o: begin
-			result_o[31:0] =src1_i[31:0] & src2_i[31:0] ;
+		`ANDI_o: begin
+			result_o[31:0] =src1_i[31:0] & (src2_i[31:0] & 32'h0000ffff);
 			zero_o = 0;
 		end
-		`OR_o: begin
-			result_o[31:0] =src1_i[31:0] | src2_i[31:0] ;
+		`ORI_o: begin
+			result_o[31:0] =src1_i[31:0] | (src2_i[31:0] & 32'h0000ffff) ;
 			zero_o = 0;
 		end
 		`XOR_o: begin
 			result_o[31:0] =src1_i[31:0] ^ src2_i[31:0] ;
 			zero_o = 0;
 		end
-		`NOR_o: begin
-			result_o[31:0] = ~ (src1_i[31:0] | src2_i[31:0]) ;
+		`NORI_o: begin
+			result_o[31:0] = ~ (src1_i[31:0] | (src2_i[31:0] & 32'h0000ffff)) ;
 			zero_o = 0;
 		end
 		`NAND_o: begin
 			result_o[31:0] = ~ (src1_i[31:0] & src2_i[31:0]) ;
 			zero_o = 0;
 		end
+		`AND_o: begin
+			result_o[31:0] = src1_i[31:0] & src2_i[31:0];
+			zero_o = 0;
+		end
+		`OR_o: begin
+			result_o[31:0] = src1_i[31:0] | src2_i[31:0];
+			zero_o = 0;
+		end
+		`NOR_o: begin
+			result_o[31:0] = ~(src1_i[31:0] | src2_i[31:0]);
+			zero_o = 0;
+		end
 		`SMAL_o: begin
-			if(src1_i[31:0]<src2_i[31:0]) begin
-				result_o [31:0] = 1 ;
-			end
-			else begin
-				result_o [31:0] = 0 ;
-			end
+			result_o = src1_i < src2_i;
 			zero_o = 0;
 		end
-		`LEFT_o: begin
-			result_o[31:0] = src1_i[31:0] << src2_i[31:0];
+		`SLL_o: begin
+			result_o[31:0] = src2_i[31:0] << src1_i[31:0];
 			zero_o = 0;
+			sll_o = 1;
 		end
-		`RIGH_o: begin
-			result_o[31:0] = src1_i[31:0] >> src2_i[31:0];
+		`SRL_o: begin
+			result_o[31:0] = src2_i[31:0] >> src1_i[31:0];
 			zero_o = 0;
 		end
 		`RS_o: begin
@@ -126,6 +142,10 @@ always@(*) begin
 		`LUI_o: begin
 			zero_o = 0;
 			result_o[31:0] = src2_i << 16;
+		end
+		`SRA_o: begin
+			zero_o = 0;
+			result_o[31:0] = $signed(src2_i[31:0]) >>> src1_i[31:0];
 		end
 		default: ;
 	endcase

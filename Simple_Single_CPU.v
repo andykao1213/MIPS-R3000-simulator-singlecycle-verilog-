@@ -39,7 +39,7 @@ wire alusrc ;
 wire branch ;
 wire aluctr;
 wire memwrite ,memread,memtoreg;
-wire jump, jr, sr;
+wire jump, jr, sr, sll;
 wire [4:0]afteraluctr ;
 wire [31:0] aftersignextend ;
 wire [31:0] aftershiftleft ;
@@ -64,6 +64,7 @@ wire err_addr_o;
 wire err_mis_o;
 wire [32-1:0]   halt;
 wire check2;
+wire [32-1:0] immforR;
 
 
 //Create components
@@ -110,6 +111,7 @@ Reg_File RF(
 		.RDdata_i(mux_dataMem_result_w2[31:0]),
 		.RegWrite_i(ctrl_register_write_w),
         .Jr_i(jr),
+        .Sll_i(sll),
 		.RSdata_o(afterregread1) ,
 		.RTdata_o(afterregread2),
         .Error_Zero(err_zero_o)
@@ -149,9 +151,12 @@ MUX_2to1 #(.size(32)) Mux_ALUSrc(
         .select_i(alusrc),
         .data_o(aftermux2toinalu)
         );	
+
+assign immforR = 32'h00000000 + afterinstructmem_o[10:6];
+
 MUX_2to1 #(.size(32)) Mux_ALUSrc2(
         .data0_i(afterregread1),
-        .data1_i(afterregread2),
+        .data1_i(immforR),
         .select_i(sr),
         .data_o(aftermux2toinalu2)
         );	
@@ -162,7 +167,8 @@ ALU ALU(
 	    .ctrl_i(afteraluctr),
 	    .result_o(aluresult),
 		.zero_o(zero),
-        .err_num_o(err_num_o)
+        .err_num_o(err_num_o),
+        .sll_o(sll)
 	    );
 		
 Adder Adder2(

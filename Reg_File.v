@@ -8,6 +8,7 @@ module Reg_File(
     RDdata_i,
     RegWrite_i,
     Jr_i,
+    Sll_i,
     RSdata_o,
     RTdata_o,
     Error_Zero
@@ -22,6 +23,7 @@ input  [5-1:0]  RTaddr_i;
 input  [5-1:0]  RDaddr_i;
 input  [32-1:0] RDdata_i;
 input           Jr_i;
+input           Sll_i;
 
 output [32-1:0] RSdata_o;
 output [32-1:0] RTdata_o; 
@@ -55,30 +57,16 @@ always @( negedge rst_i or posedge clk_i  ) begin
         if(RegWrite_i == 1)begin
             if(RDaddr_i != 0)begin
                 Reg_File[RDaddr_i] <= RDdata_i;
-                //Error_Zero = 0;    
             end
             else begin
                 Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
-                if(~Jr_i)
+                if(~Jr_i && ~Sll_i)
                     Error_Zero = 1;
             end
         end
         else begin
             Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
-            //Error_Zero = 0;
         end
-        /*if(RegWrite_i && RDaddr_i!=0) begin
-            Reg_File[RDaddr_i] <= RDdata_i;
-            Error_Zero <= 0;	
-        end
-		else if(RegWrite_i && RDaddr_i==0) begin
-            Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
-            Error_Zero <= 1;
-		end
-        else begin
-            Reg_File[RDaddr_i] <= Reg_File[RDaddr_i];
-            Error_Zero <= 0;
-        end*/
 	end
 end
 

@@ -41,6 +41,7 @@ reg                SR_o;
 `define BIG_o  5'b01111
 `define JTYP_o 5'b10000
 `define LUI_o  5'b10001
+`define SRA_o  5'b10010
 
 //define funct_i
 `define FUNC_ADD  6'h20
@@ -80,7 +81,7 @@ always @(funct_i or ALUOp_i) begin
 				SR_o = 1;
 			end
 			`FUNC_SRA: begin
-			 	ALUCtrl_o = `RIGH_o;
+			 	ALUCtrl_o = `SRA_o;
 			 	SR_o = 1;
 			 end
 			`FUNC_JR : begin
