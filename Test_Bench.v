@@ -167,8 +167,8 @@ always@(posedge CLK) begin
 	
 	//$write("%0d : ", count);
 
-	 //$display("%08x, %0d, %0d", cpu.datamemresult, cpu.DataMemory.UnSigned_i, cpu.DataMemory.MemNum_i);
-	/*case(cpu.Decoder.instr_op_i)
+	/*if(count == 411)begin
+	case(cpu.Decoder.instr_op_i)
 		`RTYP: begin
 			case (cpu.afterinstructmem_o[5:0])
 			
@@ -275,10 +275,12 @@ always@(posedge CLK) begin
 			$display(" jump ");
 		end
 
-	endcase // cpu.Decoder.instr_op_i
-	//$display("%0d", cpu.afterinstructmem_o[20:16]);
-	//if(count == ) $display("%08x  %08x", cpu.aftermux2toinalu2, cpu.aftermux2toinalu);
-	//$display("%08x %08x", cpu.ALU.src1_i, cpu.ALU.src2_i);*/
+	endcase
+		$display("%08x  %08x  %08x", cpu.ALU.src1_i, cpu.ALU.src2_i, cpu.ALU.result_o);
+	//$display("%0d  %0d",cpu.DataMemory.MemNum_i, cpu.DataMemory.MemRead_i);
+
+	end */
+
 
 	/*********************/
 	

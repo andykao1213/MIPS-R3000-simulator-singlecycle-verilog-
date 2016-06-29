@@ -63,7 +63,7 @@ always@(posedge clk_i or negedge rst_i) begin
 
 end 
 
-always@(addr_i or MemRead_i) begin
+always@(/*addr_i or MemRead_i*/ clk_i) begin
 	if(MemRead_i)begin
 		case (MemNum_i)
 			`WORD: data_o = {Mem[addr_i], Mem[addr_i+1], Mem[addr_i+2], Mem[addr_i+3]};

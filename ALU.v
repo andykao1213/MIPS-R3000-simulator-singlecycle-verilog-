@@ -69,9 +69,9 @@ always@(*) begin
 			zero_o = 0;
 		end
 		`SUB_o: begin
-			result_o[31:0] =src1_i[31:0] - src2_i[31:0] ;
+			result_o[31:0] = src1_i[31:0] - src2_i[31:0];
 			zero_o = 0;
-			if(src1_i[31] == ~src2_i[31] && src1_i[31] != result_o[31])
+			if(src1_i[31] == (-src2_i>>31) && src1_i[31] != result_o[31])
 				err_num_o = 1;
 		end
 		`ANDI_o: begin
